@@ -10,7 +10,7 @@ public struct InitOptions
     bool centerWindow;
 }
 
-void init(InitOptions options)
+public void init(InitOptions options)
 {
     import std.string : toStringz;
     import derelict.sdl2.sdl : DerelictSDL2, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_UNDEFINED,
@@ -24,7 +24,7 @@ void init(InitOptions options)
     return;
 }
 
-void deinit()
+public void deinit()
 {
     import derelict.sdl2.sdl : SDL_DestroyWindow, SDL_DestroyRenderer;
 
