@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/g2d
+g2d.so
+g2d.dylib
+g2d.dll
+g2d.a
+g2d.lib
+g2d-test-*
+*.exe
+*.o
+*.obj
+*.lst

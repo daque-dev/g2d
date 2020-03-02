@@ -1,0 +1,12 @@
+{
+	"authors": [
+		"quevangel"
+	],
+        "targetType": "library",
+	"dependencies": {
+		"derelict-sdl2": "~>2.1.4"
+	},
+	"description": "2d graphics system for D.",
+	"license": "free softa",
+	"name": "g2d"
+}

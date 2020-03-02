@@ -1,0 +1,19 @@
+* G2D
+The Graphics 2D Project
+** Description
+This is intended to be a simple 2d graphics layer for SDL2.
+It will mainly be useful for having the concept of coordinate system and a camera.
+This is part of the Daque project.
+** Naming Convention 
+[[https://dlang.org/dstyle.html][The one described here]]
+** Current Objectives [%]
+*** TODO define an initial interface
+**** TODO define an initialization function
+A simple init() will do
+**** TODO enable camera setting
+***** static mode (centerX, centerY, width, height)
+Setting the camera center and dimensions.
+***** dynamic mode (cameraGetter)
+The camera is recalculated each time according to the function (delegate) cameraGetter.
+**** TODO enable drawing a rectangle according to camera setting
+**** TODO define an deinitialization function
