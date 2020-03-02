@@ -6,14 +6,14 @@ It will mainly be useful for having the concept of coordinate system and a camer
 This is part of the Daque project.
 ** Naming Convention 
 [[https://dlang.org/dstyle.html][The one described here]]
-** Current Objectives [%]
-*** TODO define an initial interface
+** Current Objectives [100%]
+*** DONE define an initial interface
 **** DONE define an initialization function
 A simple init() will do
-**** TODO enable camera setting
+**** DONE enable camera setting
 ***** static mode (centerX, centerY, width, height)
 Setting the camera center and dimensions.
 ***** dynamic mode (cameraGetter)
 The camera is recalculated each time according to the function (delegate) cameraGetter.
-**** TODO enable drawing a rectangle according to camera setting
+**** DONE enable drawing a rectangle according to camera setting
 **** DONE define an deinitialization function

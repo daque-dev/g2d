@@ -52,6 +52,91 @@ public void setCameraGetter(Camera delegate() cameraGetter)
     _cameraGetter = cameraGetter;
 }
 
+private Camera getCurrentCamera()
+{
+    if (_cameraGetter)
+        return _cameraGetter();
+    return _camera;
+}
+
+private int[2] worldToWindowCoordinates(float[2] worldCoordinates)
+{
+    import derelict.sdl2.sdl : SDL_GetWindowSize;
+
+    Camera camera = getCurrentCamera;
+    int[2] windowSize;
+    SDL_GetWindowSize(_window, &windowSize[0], &windowSize[1]);
+    float[2] windowSizeFloat = [
+        cast(float) windowSize[0], cast(float) windowSize[1]
+    ];
+    worldCoordinates[] -= camera.center[];
+    worldCoordinates[] /= camera.dimensions[];
+    worldCoordinates[] *= windowSizeFloat[];
+    windowSizeFloat[] /= 2.0f;
+    float[2] resultFloat = [worldCoordinates[0], -worldCoordinates[1]];
+    resultFloat[] += windowSizeFloat[];
+    return [cast(int) resultFloat[0], cast(int) resultFloat[1]];
+}
+
+public struct Color
+{
+    ubyte red, green, blue;
+}
+
+public void drawRectangle(float[2] center, float[2] dimensions, Color color)
+{
+    auto upperLeftCorner = worldToWindowCoordinates([
+            center[0] - dimensions[0] / 2.0f, center[1] + dimensions[1] / 2.0f
+            ]);
+    auto lowerRightCorner = worldToWindowCoordinates([
+            center[0] + dimensions[0] / 2.0f, center[1] - dimensions[1] / 2.0f
+            ]);
+    int[2] rectangleSize = lowerRightCorner[] - upperLeftCorner[];
+    assert(rectangleSize[0] >= 0 && rectangleSize[1] >= 0);
+
+    import derelict.sdl2.sdl : SDL_Rect, SDL_RenderFillRect, SDL_SetRenderDrawColor;
+
+    SDL_SetRenderDrawColor(_renderer, color.red, color.green, color.blue, ubyte(255));
+    SDL_Rect rect;
+    with (rect)
+    {
+        x = upperLeftCorner[0];
+        y = upperLeftCorner[1];
+        w = rectangleSize[0];
+        h = rectangleSize[1];
+    }
+    SDL_RenderFillRect(_renderer, &rect);
+}
+
+private Color _clearColor;
+public void clearColor(Color c)
+{
+    _clearColor = c;
+}
+
+public void startDrawing()
+{
+    import derelict.sdl2.sdl : SDL_RenderClear, SDL_SetRenderDrawColor;
+
+    SDL_SetRenderDrawColor(_renderer, _clearColor.red, _clearColor.green,
+            _clearColor.blue, ubyte(255));
+    SDL_RenderClear(_renderer);
+}
+
+public void endDrawing()
+{
+    import derelict.sdl2.sdl : SDL_RenderPresent;
+
+    SDL_RenderPresent(_renderer);
+}
+
+public void draw(alias F)()
+{
+    startDrawing;
+    F();
+    endDrawing;
+}
+
 unittest
 {
     import core.thread : Thread;
@@ -67,9 +152,20 @@ unittest
         centerWindow = false;
     }
     init(initOptions);
-    foreach (second; [1, 2, 3])
+    Camera camera;
+    with (camera)
     {
-        Thread.sleep(dur!"seconds"(1));
+        center = [0, 0];
+        dimensions = [100, 100];
+    }
+
+    setCamera(camera);
+    import std.range : iota;
+
+    foreach (second; iota(1, 100))
+    {
+        draw!({ drawRectangle([second, 0], [10, 10], Color(255, 0, 0)); });
+        Thread.sleep(dur!"msecs"(5));
         writeln(second);
     }
     deinit();
