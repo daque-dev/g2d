@@ -32,6 +32,26 @@ public void deinit()
     SDL_DestroyRenderer(_renderer);
 }
 
+public struct Camera
+{
+    float[2] center;
+    float[2] dimensions;
+}
+
+private Camera _camera;
+
+public void setCamera(Camera camera)
+{
+    _camera = camera;
+}
+
+private Camera delegate() _cameraGetter;
+
+public void setCameraGetter(Camera delegate() cameraGetter)
+{
+    _cameraGetter = cameraGetter;
+}
+
 unittest
 {
     import core.thread : Thread;
