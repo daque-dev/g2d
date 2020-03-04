@@ -1,26 +1,99 @@
-import derelict.sdl2.sdl : SDL_Window, SDL_Renderer;
+import derelict.sdl2.sdl : SDL_Window, SDL_Renderer, SDL_Texture;
 
 private SDL_Window* _window;
 private SDL_Renderer* _renderer;
+private SDL_Texture*[] _textures;
+
+public alias TextureId = ulong;
+
+private TextureId _lastTexture;
+
+public TextureId newTexture(string fileName)
+{
+    import derelict.sdl2.image : IMG_Load, IMG_GetError;
+    import derelict.sdl2.sdl : SDL_CreateTextureFromSurface;
+    import std.string : toStringz, fromStringz;
+    import std.exception : enforce;
+    import std.conv : text;
+
+    enforce(_lastTexture + 1 < _textures.length);
+
+    auto surface = IMG_Load(fileName.toStringz);
+    enforce(surface !is null, text(fromStringz(IMG_GetError())));
+    _textures[_lastTexture + 1] = SDL_CreateTextureFromSurface(_renderer, surface);
+    _lastTexture = _lastTexture + 1;
+    enforce(_textures[_lastTexture]!is null);
+    return _lastTexture;
+}
+
+public void freeTexture(TextureId textureId)
+{
+    return;
+}
+
+struct WindowRectangle
+{
+    int[2] position;
+    int[2] dimensions;
+}
+
+WindowRectangle worldRectangleToWindowRectangle(float[2] center, float[2] dimensions)
+{
+    auto upperLeftCorner = worldToWindowCoordinates([
+            center[0] - dimensions[0] / 2.0f, center[1] + dimensions[1] / 2.0f
+            ]);
+    auto lowerRightCorner = worldToWindowCoordinates([
+            center[0] + dimensions[0] / 2.0f, center[1] - dimensions[1] / 2.0f
+            ]);
+    int[2] rectangleSize = lowerRightCorner[] - upperLeftCorner[];
+    assert(rectangleSize[0] >= 0 && rectangleSize[1] >= 0);
+    return WindowRectangle(upperLeftCorner, rectangleSize);
+}
+
+public void drawTexture(float[2] center, float[2] dimensions, TextureId textureId)
+{
+    import derelict.sdl2.sdl : SDL_Rect, SDL_RenderCopy;
+
+    auto windowRectangle = worldRectangleToWindowRectangle(center, dimensions);
+    auto texture = _textures[textureId];
+    SDL_Rect rect;
+    with (rect)
+    {
+        x = windowRectangle.position[0];
+        y = windowRectangle.position[1];
+        w = windowRectangle.dimensions[0];
+        h = windowRectangle.dimensions[1];
+    }
+    SDL_RenderCopy(_renderer, texture, null, &rect);
+}
 
 public struct InitOptions
 {
     string windowName;
     uint width, height;
     bool centerWindow;
+    ulong maxNoTextures;
 }
 
 public void init(InitOptions options)
 {
     import std.string : toStringz;
-    import derelict.sdl2.sdl : DerelictSDL2, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_UNDEFINED,
-        SDL_CreateWindow, SDL_WINDOW_SHOWN, SDL_CreateRenderer, SDL_RENDERER_ACCELERATED;
+    import derelict.sdl2.sdl : DerelictSDL2, SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_UNDEFINED, SDL_CreateWindow, SDL_WINDOW_SHOWN,
+        SDL_CreateRenderer, SDL_RENDERER_ACCELERATED, SDL_Init, SDL_INIT_EVERYTHING;
+    import derelict.sdl2.image : DerelictSDL2Image, IMG_Load, IMG_Init, IMG_INIT_PNG;
 
     DerelictSDL2.load();
+    DerelictSDL2Image.load();
+
+    SDL_Init(SDL_INIT_EVERYTHING);
+    IMG_Init(IMG_INIT_PNG);
+
     auto windowPos = options.centerWindow ? SDL_WINDOWPOS_CENTERED : SDL_WINDOWPOS_UNDEFINED;
     _window = SDL_CreateWindow(options.windowName.toStringz, windowPos,
             windowPos, options.width, options.height, SDL_WINDOW_SHOWN);
     _renderer = SDL_CreateRenderer(_window, -1, SDL_RENDERER_ACCELERATED);
+    _textures.length = options.maxNoTextures;
     return;
 }
 
@@ -85,26 +158,18 @@ public struct Color
 
 public void drawRectangle(float[2] center, float[2] dimensions, Color color)
 {
-    auto upperLeftCorner = worldToWindowCoordinates([
-            center[0] - dimensions[0] / 2.0f, center[1] + dimensions[1] / 2.0f
-            ]);
-    auto lowerRightCorner = worldToWindowCoordinates([
-            center[0] + dimensions[0] / 2.0f, center[1] - dimensions[1] / 2.0f
-            ]);
-    int[2] rectangleSize = lowerRightCorner[] - upperLeftCorner[];
-    assert(rectangleSize[0] >= 0 && rectangleSize[1] >= 0);
-
     import derelict.sdl2.sdl : SDL_Rect, SDL_RenderFillRect, SDL_SetRenderDrawColor;
 
-    SDL_SetRenderDrawColor(_renderer, color.red, color.green, color.blue, ubyte(255));
+    auto windowRectangle = worldRectangleToWindowRectangle(center, dimensions);
     SDL_Rect rect;
     with (rect)
     {
-        x = upperLeftCorner[0];
-        y = upperLeftCorner[1];
-        w = rectangleSize[0];
-        h = rectangleSize[1];
+        x = windowRectangle.position[0];
+        y = windowRectangle.position[1];
+        w = windowRectangle.dimensions[0];
+        h = windowRectangle.dimensions[1];
     }
+    SDL_SetRenderDrawColor(_renderer, color.red, color.green, color.blue, ubyte(255));
     SDL_RenderFillRect(_renderer, &rect);
 }
 
@@ -150,8 +215,14 @@ unittest
         width = 800;
         height = 600;
         centerWindow = false;
+        maxNoTextures = 100;
     }
     init(initOptions);
+    scope (exit)
+        deinit();
+    auto testTexture = newTexture("test_image.png");
+    scope (exit)
+        freeTexture(testTexture);
     Camera camera;
     with (camera)
     {
@@ -164,8 +235,11 @@ unittest
 
     foreach (second; iota(1, 100))
     {
-        draw!({ drawRectangle([second, 0], [10, 10], Color(255, 0, 0)); });
-        Thread.sleep(dur!"msecs"(5));
+        draw!({
+            drawRectangle([second, 0], [10, 10], Color(255, 0, 0));
+            drawTexture([second, 0], [10, 10], testTexture);
+        });
+        Thread.sleep(dur!"msecs"(20));
         writeln(second);
     }
     deinit();
