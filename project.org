@@ -6,7 +6,7 @@ It will mainly be useful for having the concept of coordinate system and a camer
 This is part of the Daque project.
 ** Naming Convention 
 [[https://dlang.org/dstyle.html][The one described here]]
-** Current Objectives [66%]
+** Current Objectives [100%]
 *** DONE define an initial interface
 **** DONE define an initialization function
 A simple init() will do
@@ -21,7 +21,7 @@ The camera is recalculated each time according to the function (delegate) camera
 **** DONE load image from file
 **** DONE draw image
 **** DONE free image from memory
-*** TODO toggleable drawing modes
-**** TODO camera
-**** TODO uncamera
+*** DONE toggleable drawing modes
+**** DONE camera
+**** DONE uncamera
 

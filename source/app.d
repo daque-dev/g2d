@@ -118,6 +118,11 @@ public void setCamera(Camera camera)
     _camera = camera;
 }
 
+public void fixedMode(float[2] dimensions)
+{
+  setCamera(Camera([0, 0], dimensions));
+}
+
 private Camera delegate() _cameraGetter;
 
 public void setCameraGetter(Camera delegate() cameraGetter)
@@ -223,20 +228,17 @@ unittest
     auto testTexture = newTexture("test_image.png");
     scope (exit)
         freeTexture(testTexture);
-    Camera camera;
-    with (camera)
-    {
-        center = [0, 0];
-        dimensions = [100, 100];
-    }
-
+    Camera camera = Camera([100, 0], [100, 100]);
     setCamera(camera);
     import std.range : iota;
 
     foreach (second; iota(1, 100))
     {
         draw!({
+	    setCamera(camera);
             drawRectangle([second, 0], [10, 10], Color(255, 0, 0));
+	    
+	    fixedMode([100, 100]);
             drawTexture([second, 0], [10, 10], testTexture);
         });
         Thread.sleep(dur!"msecs"(20));
