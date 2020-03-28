@@ -24,4 +24,6 @@ The camera is recalculated each time according to the function (delegate) camera
 *** DONE toggleable drawing modes
 **** DONE camera
 **** DONE uncamera
-
+*** TODO manteinance
+**** TODO move code to modules
+**** TODO comment current code
